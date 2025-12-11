@@ -5,6 +5,71 @@ Dev `bun dev` from root project, idk what to experiment yet
 
 
 
+# Plans 
+
+
+
+// Projects
+POST   /api/projects
+GET    /api/projects
+GET    /api/projects/:id
+PATCH  /api/projects/:id
+DELETE /api/projects/:id
+
+// Issues
+POST   /api/projects/:projectId/issues
+GET    /api/projects/:projectId/issues  // with query params for filters
+GET    /api/issues/:id
+PATCH  /api/issues/:id
+DELETE /api/issues/:id
+POST   /api/issues/:id/assign
+PATCH  /api/issues/:id/status
+
+// Sprints
+POST   /api/projects/:projectId/sprints
+GET    /api/projects/:projectId/sprints
+PATCH  /api/sprints/:id
+POST   /api/sprints/:id/start
+POST   /api/sprints/:id/complete
+POST   /api/sprints/:id/issues  // add issue to sprint
+
+// Comments
+POST   /api/issues/:issueId/comments
+GET    /api/issues/:issueId/comments
+PATCH  /api/comments/:id
+DELETE /api/comments/:id
+```
+
+## Nx Library Structure Recommendation
+```
+libs/
+  shared/
+    types/              # All interfaces above
+    validation/         # Zod schemas for API DTOs
+    constants/          # Issue types, priorities, etc.
+    
+    #FRONTEND ARCH IS YET TO BE DECIDED
+  frontend/
+    components/        # Button, Input, Modal, etc.
+        atoms/
+        molecules/
+        organisms/
+        templates/
+
+    #AS FOR BELOW THESE MIGHT GO TO ORGANISMS OR TEMPLATES FOR BIGGER COMPONENTS
+    issue/             # IssueCard, IssueDetail components
+    board/             # KanbanBoard, KanbanColumn
+    
+  backend/
+    auth/              # NestJS auth module
+    projects/          # Projects module
+    issues/            # Issues module  
+    sprints/           # Sprints module
+    comments/          # Comments module
+    database/          # TypeORM/Drizzle setup 
+
+
+
 # MonorepoTest
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
@@ -73,17 +138,6 @@ Nx Console is an editor extension that enriches your developer experience. It le
 
 [Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
-## Useful links
 
-Learn more:
 
-- [Learn more about this workspace setup](https://nx.dev/getting-started/tutorials/react-monorepo-tutorial?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
