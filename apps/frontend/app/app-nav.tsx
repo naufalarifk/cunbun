@@ -9,6 +9,9 @@ export function AppNav() {
       <NavLink to="/about" end>
         About
       </NavLink>
+      <NavLink to="/draggables" end>
+        Draggables
+      </NavLink>
     </nav>
   );
 }
