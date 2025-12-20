@@ -9,81 +9,16 @@ import {
   useSensor,
   useSensors,
   closestCorners,
-  useDroppable,
 } from '@dnd-kit/core';
 import {
   SortableContext,
   arrayMove,
-  verticalListSortingStrategy,
+  horizontalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import type { DragType, Column } from '../types/components';
+import { SortableColumn } from '../components/atoms/SortableColumn';
 
-// Types
-type Task = {
-  id: string;
-  content: string;
-};
-
-type Column = {
-  id: string;
-  title: string;
-  tasks: Task[];
-};
-
-// Task Card Component
-function TaskCard({ task }: { task: Task }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
-    >
-      <p className="text-sm text-gray-800">{task.content}</p>
-    </div>
-  );
-}
-
-// Droppable Column Component
-function Column({ column, tasks }: { column: Column; tasks: Task[] }) {
-  const { setNodeRef } = useDroppable({
-    id: column.id,
-  });
-
-  const taskIds = tasks.map((task) => task.id);
-
-  return (
-    <div className="bg-gray-100 rounded-lg p-4 w-80 flex-shrink-0">
-      <h3 className="font-semibold text-gray-700 mb-4">{column.title}</h3>
-      <div ref={setNodeRef}>
-        <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
-          <div className="space-y-2 min-h-[200px]">
-            {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))}
-          </div>
-        </SortableContext>
-      </div>
-    </div>
-  );
-}
+// Sortable Column Component
 
 // Main Board Component
 export default function TrelloBoard() {
@@ -116,6 +51,7 @@ export default function TrelloBoard() {
   ]);
 
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeType, setActiveType] = useState<DragType | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -134,6 +70,7 @@ export default function TrelloBoard() {
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
+    setActiveType(event.active.data.current?.type || null);
   };
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -143,57 +80,68 @@ export default function TrelloBoard() {
 
     const activeId = active.id as string;
     const overId = over.id as string;
+    const activeType = active.data.current?.type;
 
-    // Find which column the active task is in
-    const activeColumn = findColumn(activeId);
+    // Handle column reordering
+    if (activeType === 'column') {
+      const activeIndex = columns.findIndex((col) => col.id === activeId);
+      const overIndex = columns.findIndex((col) => col.id === overId);
 
-    // Check if we're over a column directly or over a task
-    let overColumn = findColumn(overId);
-
-    // If overId is a column id, use it directly
-    if (columns.some((col) => col.id === overId)) {
-      overColumn = overId;
-    }
-
-    if (!activeColumn || !overColumn || activeColumn === overColumn) {
+      if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+        setColumns((cols) => arrayMove(cols, activeIndex, overIndex));
+      }
       return;
     }
 
-    // Move task to the new column
-    setColumns((prevColumns) => {
-      const activeCol = prevColumns.find((col) => col.id === activeColumn);
-      const overCol = prevColumns.find((col) => col.id === overColumn);
+    // Handle task dragging
+    if (activeType === 'task') {
+      const activeColumn = findColumn(activeId);
+      let overColumn = findColumn(overId);
 
-      if (!activeCol || !overCol) return prevColumns;
+      // If overId is a column id, use it directly
+      if (columns.some((col) => col.id === overId)) {
+        overColumn = overId;
+      }
 
-      const activeTask = activeCol.tasks.find((task) => task.id === activeId);
-      if (!activeTask) return prevColumns;
+      if (!activeColumn || !overColumn || activeColumn === overColumn) {
+        return;
+      }
 
-      return prevColumns.map((col) => {
-        if (col.id === activeColumn) {
-          return {
-            ...col,
-            tasks: col.tasks.filter((task) => task.id !== activeId),
-          };
-        }
-        if (col.id === overColumn) {
-          // If over a task, insert before it; otherwise add to end
-          const overTaskIndex = col.tasks.findIndex(
-            (task) => task.id === overId
-          );
-          const newTasks = [...col.tasks];
+      // Move task to the new column
+      setColumns((prevColumns) => {
+        const activeCol = prevColumns.find((col) => col.id === activeColumn);
+        const overCol = prevColumns.find((col) => col.id === overColumn);
 
-          if (overTaskIndex >= 0) {
-            newTasks.splice(overTaskIndex, 0, activeTask);
-          } else {
-            newTasks.push(activeTask);
+        if (!activeCol || !overCol) return prevColumns;
+
+        const activeTask = activeCol.tasks.find((task) => task.id === activeId);
+        if (!activeTask) return prevColumns;
+
+        return prevColumns.map((col) => {
+          if (col.id === activeColumn) {
+            return {
+              ...col,
+              tasks: col.tasks.filter((task) => task.id !== activeId),
+            };
           }
+          if (col.id === overColumn) {
+            const overTaskIndex = col.tasks.findIndex(
+              (task) => task.id === overId
+            );
+            const newTasks = [...col.tasks];
 
-          return { ...col, tasks: newTasks };
-        }
-        return col;
+            if (overTaskIndex >= 0) {
+              newTasks.splice(overTaskIndex, 0, activeTask);
+            } else {
+              newTasks.push(activeTask);
+            }
+
+            return { ...col, tasks: newTasks };
+          }
+          return col;
+        });
       });
-    });
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -201,48 +149,66 @@ export default function TrelloBoard() {
 
     if (!over) {
       setActiveId(null);
+      setActiveType(null);
       return;
     }
 
     const activeId = active.id as string;
     const overId = over.id as string;
+    const activeType = active.data.current?.type;
 
-    const activeColumn = findColumn(activeId);
-    const overColumn = findColumn(overId);
+    // Handle task reordering within same column
+    if (activeType === 'task') {
+      const activeColumn = findColumn(activeId);
+      const overColumn = findColumn(overId);
 
-    // If we're in the same column, reorder
-    if (activeColumn && overColumn && activeColumn === overColumn) {
-      setColumns((prevColumns) => {
-        const column = prevColumns.find((col) => col.id === activeColumn);
-        if (!column) return prevColumns;
+      if (activeColumn && overColumn && activeColumn === overColumn) {
+        setColumns((prevColumns) => {
+          const column = prevColumns.find((col) => col.id === activeColumn);
+          if (!column) return prevColumns;
 
-        const oldIndex = column.tasks.findIndex((task) => task.id === activeId);
-        const newIndex = column.tasks.findIndex((task) => task.id === overId);
+          const oldIndex = column.tasks.findIndex(
+            (task) => task.id === activeId
+          );
+          const newIndex = column.tasks.findIndex((task) => task.id === overId);
 
-        if (oldIndex === -1 || newIndex === -1) return prevColumns;
+          if (oldIndex === -1 || newIndex === -1) return prevColumns;
 
-        return prevColumns.map((col) => {
-          if (col.id === activeColumn) {
-            return {
-              ...col,
-              tasks: arrayMove(col.tasks, oldIndex, newIndex),
-            };
-          }
-          return col;
+          return prevColumns.map((col) => {
+            if (col.id === activeColumn) {
+              return {
+                ...col,
+                tasks: arrayMove(col.tasks, oldIndex, newIndex),
+              };
+            }
+            return col;
+          });
         });
-      });
+      }
     }
 
     setActiveId(null);
+    setActiveType(null);
   };
 
-  const activeTask = activeId
-    ? columns.flatMap((col) => col.tasks).find((task) => task.id === activeId)
-    : null;
+  const activeTask =
+    activeId && activeType === 'task'
+      ? columns.flatMap((col) => col.tasks).find((task) => task.id === activeId)
+      : null;
+
+  const activeColumn =
+    activeId && activeType === 'column'
+      ? columns.find((col) => col.id === activeId)
+      : null;
+
+  const columnIds = columns.map((col) => col.id);
 
   return (
     <div className="p-8 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-8">Project Board</h1>
+      <p className="text-sm text-gray-600 mb-4">
+        Tip: Drag column headers to rearrange columns, drag tasks to move them
+      </p>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -250,15 +216,40 @@ export default function TrelloBoard() {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-6 overflow-x-auto pb-4">
-          {columns.map((column) => (
-            <Column key={column.id} column={column} tasks={column.tasks} />
-          ))}
-        </div>
+        <SortableContext
+          items={columnIds}
+          strategy={horizontalListSortingStrategy}
+        >
+          <div className="flex gap-6 overflow-x-auto pb-4">
+            {columns.map((column) => (
+              <SortableColumn
+                key={column.id}
+                column={column}
+                tasks={column.tasks}
+              />
+            ))}
+          </div>
+        </SortableContext>
         <DragOverlay>
           {activeTask ? (
             <div className="bg-white p-3 rounded-lg shadow-lg border-2 border-blue-400 cursor-grabbing rotate-3">
               <p className="text-sm text-gray-800">{activeTask.content}</p>
+            </div>
+          ) : activeColumn ? (
+            <div className="bg-gray-100 rounded-lg p-4 w-80 shadow-lg border-2 border-blue-400 cursor-grabbing rotate-3 opacity-90">
+              <h3 className="font-semibold text-gray-700 mb-4">
+                {activeColumn.title}
+              </h3>
+              <div className="space-y-2 min-h-[200px]">
+                {activeColumn.tasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="bg-white p-3 rounded-lg shadow-sm border border-gray-200"
+                  >
+                    <p className="text-sm text-gray-800">{task.content}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : null}
         </DragOverlay>
