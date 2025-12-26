@@ -2,24 +2,27 @@
 
 
 ## Frontend
+
+-[ ] Shadcn integration
+
 Home
-- [] Boards List
-- [] Settings
-- [] Projects
-- [] Teams
+- [ ] Boards List
+- [ ] Settings
+- [ ] Projects
+- [ ] Teams
 
 
 Core:
-- [] Name/rename tasks
-- [] Tasks from api fetched from backend
-- [] Change Nav into Drawable Sidebar
+- [ ] Name/rename tasks
+- [ ] Tasks from api fetched from backend
+- [ ] Change Nav into Drawable Sidebar
 
 
 
 Auth:
--[] Sign-In
--[] Sign-Up
--[] Forgot Password
+- [ ] Sign-In
+- [ ] Sign-Up
+- [ ] Forgot Password
 
 
 
