@@ -2,8 +2,24 @@
 
 
 ## Frontend
+Home
+- [] Boards List
+- [] Settings
+- [] Projects
+- [] Teams
+
+
+Core:
 - [] Name/rename tasks
 - [] Tasks from api fetched from backend
+- [] Change Nav into Drawable Sidebar
+
+
+
+Auth:
+-[] Sign-In
+-[] Sign-Up
+-[] Forgot Password
 
 
 
@@ -46,6 +62,11 @@ GET    /api/issues/:issueId/comments
 PATCH  /api/comments/:id
 DELETE /api/comments/:id
 ```
+
+
+# UI
+-[] Use Shadcn
+
 
 ## Nx Library Structure Recommendation
 ```

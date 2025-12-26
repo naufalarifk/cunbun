@@ -8,7 +8,7 @@ import {
   type LinksFunction,
 } from 'react-router';
 
-import { AppNav } from './app-nav';
+import { Sidebar } from './components/organisms/Sidebar';
 import '../styles.css';
 export const meta: MetaFunction = () => [
   {
@@ -39,8 +39,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <AppNav />
-        {children}
+        <Sidebar />
+        <main className="ml-64">
+          {children}
+        </main>
         <ScrollRestoration />
         <Scripts />
       </body>
