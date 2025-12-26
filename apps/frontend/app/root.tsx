@@ -40,9 +40,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <Sidebar />
-        <main className="ml-64">
-          {children}
-        </main>
+        <main className="ml-64">{children}</main>
         <ScrollRestoration />
         <Scripts />
       </body>
